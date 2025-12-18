@@ -46,19 +46,32 @@ def size_keyboard():
 def cancel_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Отменить регистрацию", callback_data="cancel")]
+            [InlineKeyboardButton(text=" Отменить регистрацию", callback_data="cancel")]
         ]
     )
+
+# -------------------- Хранилище загруженных фото --------------------
+uploaded_photos = {}  # ключ: название товара, значение: file_id
 
 # -------------------- /start --------------------
 @dp.message(CommandStart())
 async def start(message: Message):
     await message.answer(
-        "Привет! 👋\n"
+        "Привет! \n"
         "Здесь можно приобрести мерч spivak run.\n\n"
-        "Нажми кнопку ниже 👇",
+        "Нажми кнопку ниже ",
         reply_markup=buy_button
     )
+
+# -------------------- Загрузка фото через бота --------------------
+@dp.message(F.photo)
+async def upload_photo(message: Message):
+    if message.from_user.id != ADMIN_ID:
+        return
+
+    file_id = message.photo[-1].file_id
+    uploaded_photos['tshirt'] = file_id
+    await message.answer("Фото сохранено! Теперь можно публиковать в канал.")
 
 # -------------------- Кнопка купить --------------------
 @dp.callback_query(F.data == "buy")
@@ -91,11 +104,11 @@ async def process_size(callback: CallbackQuery):
     try:
         await bot.send_message(
             ADMIN_ID,
-            f"РЕГИСТРАЦИЯ SPIVAK RUN\n\n"
-            f"ID: {user.id}\n"
-            f"Имя: {user.full_name}\n"
-            f"Username: @{user.username if user.username else 'нет'}\n"
-            f"Размер: {size}"
+            f"👕 РЕГИСТРАЦИЯ SPIVAK RUN\n\n"
+            f"🆔 ID: {user.id}\n"
+            f"👤 Имя: {user.full_name}\n"
+            f"🔗 Username: @{user.username if user.username else 'нет'}\n"
+            f"📏 Размер: {size}"
         )
     except Exception as e:
         logging.error(f"ADMIN MESSAGE ERROR: {e}")
@@ -133,7 +146,7 @@ async def cancel_registration(callback: CallbackQuery):
         logging.error(f"ADMIN MESSAGE ERROR: {e}")
 
     await callback.message.answer(
-        "Регистрация отменена.\n"
+        " Регистрация отменена.\n"
         "Если хочешь — можешь выбрать размер снова 👕"
     )
 
@@ -145,21 +158,23 @@ async def post_to_channel(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
 
-    with open("tshirt.jpg", "rb") as photo:  # локальный файл с фото
-        await bot.send_photo(
-            chat_id=CHANNEL_ID,
-            photo=photo,
-            caption=(
-                "👕 МЕРЧ SPIVAK RUN\n\n"
-                "Официальная футболка spivak run\n"
-                "Ограниченный тираж\n\n"
-                "Нажми кнопку ниже, чтобы зарегистрироваться 👇"
-            ),
-            reply_markup=buy_button
-        )
+    if 'tshirt' not in uploaded_photos:
+        await message.answer(" Фото не загружено. Сначала отправь фото боту.")
+        return
 
-    await message.answer("✅ Пост с фото и кнопкой опубликован в канале")
+    await bot.send_photo(
+        chat_id=CHANNEL_ID,
+        photo=uploaded_photos['tshirt'],
+        caption=(
+            "МЕРЧ SPIVAK RUN\n\n"
+            "Официальная футболка spivak run\n"
+            "Ограниченный тираж\n\n"
+            "Нажми кнопку ниже, чтобы зарегистрироваться "
+        ),
+        reply_markup=buy_button
+    )
 
+    await message.answer(" Пост с фото и кнопкой опубликован в канале")
 
 # -------------------- Запуск бота --------------------
 async def main():
