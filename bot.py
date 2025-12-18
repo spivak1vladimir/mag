@@ -145,16 +145,21 @@ async def post_to_channel(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
 
-    await bot.send_message(
-        CHANNEL_ID,
-        "МЕРЧ SPIVAK RUN\n\n"
-        "Официальная футболка spivak run\n"
-        "Ограниченный тираж\n\n"
-        "Нажми кнопку ниже, чтобы зарегистрироваться 👇",
-        reply_markup=buy_button
-    )
+    with open("tshirt.jpg", "rb") as photo:  # локальный файл с фото
+        await bot.send_photo(
+            chat_id=CHANNEL_ID,
+            photo=photo,
+            caption=(
+                "👕 МЕРЧ SPIVAK RUN\n\n"
+                "Официальная футболка spivak run\n"
+                "Ограниченный тираж\n\n"
+                "Нажми кнопку ниже, чтобы зарегистрироваться 👇"
+            ),
+            reply_markup=buy_button
+        )
 
-    await message.answer("Пост с кнопкой опубликован в канале")
+    await message.answer("✅ Пост с фото и кнопкой опубликован в канале")
+
 
 # -------------------- Запуск бота --------------------
 async def main():
